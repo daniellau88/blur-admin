@@ -11,21 +11,22 @@ var $ = require('gulp-load-plugins')();
 var wiredep = require('wiredep').stream;
 var _ = require('lodash');
 
-gulp.task('styles-reload', ['styles'], function () {
+function stylesReload() {
   return buildStyles()
     .pipe(browserSync.stream());
-});
+}
 
-gulp.task('styles', function () {
+function styles() {
   return buildStyles();
-});
+};
 
-gulp.task('stylesAuth', function () {
+function stylesAuth() {
   return buildSingleScss(path.join(conf.paths.src, '/sass/auth.scss'));
-});
-gulp.task('styles404', function () {
+};
+
+function styles404() {
   return buildSingleScss(path.join(conf.paths.src, '/sass/404.scss'));
-});
+}
 
 var buildStyles = function () {
   var sassOptions = {
@@ -71,3 +72,10 @@ var buildSingleScss = function (paths) {
     .pipe($.autoprefixer()).on('error', conf.errorHandler('Autoprefixer'))
     .pipe(gulp.dest(path.join(conf.paths.tmp, '/serve/app/')));
 };
+
+exports.tasks = {
+  'styles': styles,
+  'styles-reload': gulp.series(styles, stylesReload), // is styles necessary??
+  'stylesAuth': stylesAuth,
+  'styles404': styles404
+}

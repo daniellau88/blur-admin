@@ -8,7 +8,13 @@ var $ = require('gulp-load-plugins')({
   pattern: ['gulp-*', 'main-bower-files', 'uglify-save-license', 'del']
 });
 
-gulp.task('partials', function () {
+var injectTasks = require('./inject');
+var imagesTasks = require('./images');
+
+var { inject } = injectTasks.tasks;
+var { copyVendorImages } = imagesTasks.tasks;
+
+function partials() {
   return gulp.src([
     path.join(conf.paths.src, '/app/**/*.html'),
     path.join(conf.paths.tmp, '/serve/app/**/*.html')
@@ -23,9 +29,9 @@ gulp.task('partials', function () {
       root: 'app'
     }))
     .pipe(gulp.dest(conf.paths.tmp + '/partials/'));
-});
+}
 
-gulp.task('html', ['inject', 'partials'], function () {
+function html() {
   var partialsInjectFile = gulp.src(path.join(conf.paths.tmp, '/partials/templateCacheHtml.js'), { read: false });
   var partialsInjectOptions = {
     starttag: '<!-- inject:partials -->',
@@ -40,7 +46,8 @@ gulp.task('html', ['inject', 'partials'], function () {
 
   return gulp.src(path.join(conf.paths.tmp, '/serve/*.html'))
     .pipe($.inject(partialsInjectFile, partialsInjectOptions))
-    .pipe(assets = $.useref.assets())
+    // .pipe(assets = $.useref.assets())
+    .pipe($.useref())
     .pipe($.rev())
     .pipe(jsFilter)
     .pipe($.sourcemaps.init())
@@ -54,8 +61,7 @@ gulp.task('html', ['inject', 'partials'], function () {
     .pipe($.minifyCss({ processImport: false }))
     .pipe($.sourcemaps.write('maps'))
     .pipe(cssFilter.restore)
-    .pipe(assets.restore())
-    .pipe($.useref())
+    // .pipe(assets.restore())
     .pipe($.revReplace())
     .pipe(htmlFilter)
     .pipe($.minifyHtml({
@@ -67,17 +73,17 @@ gulp.task('html', ['inject', 'partials'], function () {
     .pipe(htmlFilter.restore)
     .pipe(gulp.dest(path.join(conf.paths.dist, '/')))
     .pipe($.size({ title: path.join(conf.paths.dist, '/'), showFiles: true }));
-  });
+}
 
 // Only applies for fonts from bower dependencies
 // Custom fonts are handled by the "other" task
-gulp.task('fonts', function () {
+function fonts() {
   return gulp.src($.mainBowerFiles('**/*.{eot,svg,ttf,woff,woff2}'))
     .pipe($.flatten())
     .pipe(gulp.dest(path.join(conf.paths.dist, '/fonts/')));
-});
+}
 
-gulp.task('other', ['copyVendorImages'], function () {
+function other() {
   var fileFilter = $.filter(function (file) {
     return file.stat.isFile();
   });
@@ -89,10 +95,25 @@ gulp.task('other', ['copyVendorImages'], function () {
   ])
     .pipe(fileFilter)
     .pipe(gulp.dest(path.join(conf.paths.dist, '/')));
-});
+}
 
-gulp.task('clean', function () {
+function clean() {
   return $.del([path.join(conf.paths.dist, '/'), path.join(conf.paths.tmp, '/')]);
-});
+}
 
-gulp.task('build', ['html', 'fonts', 'other']);
+var htmlTask = gulp.series(inject, partials, html);
+var otherTask = gulp.series(copyVendorImages, other);
+
+exports.tasks = {
+  'partials': partials,
+  'html': htmlTask,
+  'fonts': fonts,
+  'other': otherTask,
+  'clean': clean
+}
+// exports.tasks.partials = partials;
+// exports.html = gulp.series('inject', 'partials', html);
+// exports.fonts = fonts;
+// exports.other = gulp.series('copyVendorImages', other);
+// exports.tasks,clean = clean;
+// exports.build = gulp.series(gulp.series('html', 'fonts'), gulp.series('other', 'build'))

@@ -4,7 +4,8 @@ var path = require('path');
 var gulp = require('gulp');
 var conf = require('./conf');
 
-gulp.task('copyVendorImages', function () {
+
+function copyVendorImages() {
   return gulp
     .src([
       path.join(conf.wiredep.directory, '**/ammap/dist/ammap/images/**/*'),
@@ -14,5 +15,8 @@ gulp.task('copyVendorImages', function () {
       path.join(conf.wiredep.directory, '**/leaflet/dist/images/**/*')
     ])
     .pipe(gulp.dest(path.join(conf.paths.tmp, 'serve', '/assets/img/theme/vendor')));
-});
+}
 
+exports.tasks = {
+  'copyVendorImages': copyVendorImages
+}

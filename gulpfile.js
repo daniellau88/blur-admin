@@ -2,6 +2,7 @@
 
 var gulp = require('gulp');
 var wrench = require('wrench');
+var tasks = {};
 
 /**
  *  This will load all js or coffee files in the gulp directory
@@ -10,14 +11,20 @@ var wrench = require('wrench');
 wrench.readdirSyncRecursive('./gulp').filter(function(file) {
   return (/\.(js|coffee)$/i).test(file);
 }).map(function(file) {
-  require('./gulp/' + file);
+  const gulpFiles = require('./gulp/' + file);
+  // console.log(exports);
+  tasks = {...tasks, ...gulpFiles.tasks};
 });
-
+// var hub = new HubRegistry(['gulp/*.js']);
 
 /**
  *  Default task clean temporaries directories and launch the
  *  main optimization build task
  */
-gulp.task('default', ['clean'], function () {
+function gulpDefault() {
   gulp.start('build');
-});
+}
+// gulp.registry(hub);
+
+module.exports = tasks;
+module.exports.default = gulp.series(tasks.clean, gulpDefault);
